@@ -7,6 +7,7 @@ extern int task_counter;
 extern task_t* current_task;
 extern queue_t* ready_task_queue;
 
+
 void dispatcher_body()
 {
     task_t* next;
@@ -15,64 +16,39 @@ void dispatcher_body()
         next = scheduler();
         if (next)
         {
+            printf("%10s dispatcher_body: Found next task with id %d.\n", DEBUG, next->t_id);
             task_switch(next);
         }
         else
         {
-            printf(WARNING"could not find next task.\n");
+            printf("%10s could not find next task.\n", WARNING);
         }
     }
 
+    printf(OK"dispatcher_body: Exiting dispatcher_body.\n");
     task_exit(0);
 }
 
 task_t* scheduler()
 {
-    printf(DEBUG"scheduler: Entered.\n");
-    sleep(1);
+    // Sleep time for debugging.
+    int TIME = 3;
+
+    printf("%10s scheduler: Entered.\n", DEBUG);
+    DEBUG_SLEEP(TIME);
 
     // Removing and getting first element in queue for FCFS scheduling.
-    queue_t* next_task_in_queue = queue_remove(&ready_task_queue, ready_task_queue);
-    
+    task_t* next_task_in_queue = (task_t*) queue_remove(&ready_task_queue, ready_task_queue);
+    if (next_task_in_queue)
+    {
+        queue_append(&ready_task_queue, next_task_in_queue);
+        printf("%10s scheduler: returning task %d.\n", DEBUG, next_task_in_queue->t_id);
+        DEBUG_SLEEP(TIME);
+    }
+    else
+    {
+        printf("%10s scheduler: Next task found has address NULL.\n", WARNING);
+    }
 
-    // if (current_task)
-    // {
-    //     do
-    //     {
-    //         if ((task_t*) current_task_in_queue == current_task)
-    //         {
-    //             printf(DEBUG"scheduler: Found task %d as current task.\n", ((task_t*)current_task_in_queue)->t_id);
-    //             sleep(3);
-    //             next = (task_t*) current_task_in_queue->next;
-    //             break;
-    //         }
-    //     } while(current_task_in_queue != task_queue);
-    //
-    //     if (next == NULL)
-    //     {
-    //         printf(FAILED"scheduler: Failed to find next task.\n");
-    //         sleep(1);
-    //         printf(WARNING"scheduler: Assigning current_task to next\n");
-    //         if (current_task == NULL)
-    //         {
-    //             printf(FAILED"scheduler: Current task has NULL pointer value.\n");
-    //             sleep(1);
-    //             exit(1);
-    //         }
-    //         else
-    //         {
-    //             printf(DEBUG"scheduler: Current task - %d.\n", current_task->t_id);
-    //         }
-    //     }
-    // }
-    // else
-    // {
-    //     printf(FAILED"scheduler: could not find current_task.\n");
-    //     sleep(1);
-    // }
-
-    printf(DEBUG"scheduler: returning task %d.\n", next->t_id);
-    sleep(3);
-
-    return next;
+    return next_task_in_queue;
 }

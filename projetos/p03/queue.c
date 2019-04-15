@@ -2,11 +2,15 @@
 #include "queue.h"
 #include "debugging.h"
 
+#define BEFORE "\n\n\tStructure before insertion:\n"
+#define AFTER "\n\n\tStructure after insertion:\n"
+#define NULL_STRING ""
+
 void create_queue(queue_t** queue, queue_t* elem);
 int elem_in_another_queue(queue_t* elem);
 int remove_checks_ok(queue_t* queue, queue_t* elem);
 int element_in_queue(queue_t* queue, queue_t* elem);
-void pretty_print_queue_state(queue_t* first, queue_t* elem, queue_t* last);
+void pretty_print_queue_state(queue_t* first, queue_t* elem, queue_t* last, char* text);
 
 void queue_append(queue_t **queue, queue_t *elem)
 {
@@ -17,7 +21,7 @@ void queue_append(queue_t **queue, queue_t *elem)
 
   if (elem == NULL)
   {
-    printf(FAILED"queue_append: The element does not exist.\n");
+    printf("%10s queue_append: The element does not exist.\n", FAILED);
     sleep(1);
     return;
   }
@@ -28,8 +32,7 @@ void queue_append(queue_t **queue, queue_t *elem)
   queue_t* first = *queue;
   queue_t* last = first->prev;
 
-  printf("\n\tStructure before insertion:\n");
-  pretty_print_queue_state(first, elem, last);
+  pretty_print_queue_state(first, elem, last, BEFORE);
 
 
   last->next = elem;
@@ -37,16 +40,16 @@ void queue_append(queue_t **queue, queue_t *elem)
   elem->prev = last;
   first->prev = elem;
 
-  printf("\n\n\tStructure after insertion:\n");
-  pretty_print_queue_state(first, elem, last);
 
-  printf(OK"queue_append: Successfully appended element.\n");
+  pretty_print_queue_state(first, elem, last, AFTER);
+
+  printf("%10s queue_append: Successfully appended element.\n", OK);
 
 }
 
 void create_queue(queue_t** queue, queue_t* elem)
 {
-  printf(WARNING"queue_append: The queue does not exist.\n");
+  printf("%10s queue_append: The queue does not exist.\n", WARNING);
   sleep(1);
   printf("\n\t\tCreating new one...\n");
   if (elem != NULL)
@@ -60,12 +63,12 @@ void create_queue(queue_t** queue, queue_t* elem)
   }
   else
   {
-    printf(FAILED"queue_append: Inserted NULL elem on empty queue. Aborting...\n");
+    printf("%10s queue_append: Inserted NULL elem on empty queue. Aborting...\n", FAILED);
     sleep(1);
     return;
   }
 
-  pretty_print_queue_state(*queue, *queue, *queue);
+  pretty_print_queue_state(*queue, *queue, *queue, NULL);
   return;
 }
 
@@ -73,7 +76,7 @@ int elem_in_another_queue(queue_t* elem)
 {
   if (elem->prev != NULL)
   {
-    printf(WARNING"elem_in_another_queue: The element has prev address set.\n");
+    printf("%10s elem_in_another_queue: The element has prev address set.\n", WARNING);
     sleep(1);
     printf("\n\t\tPossibly belongs to another queue. Aborting...\n");
     return 1;
@@ -81,7 +84,7 @@ int elem_in_another_queue(queue_t* elem)
 
   if (elem->next != NULL)
   {
-    printf(FAILED"elem_in_another_queue: The element has next address set.\n");
+    printf("%10s elem_in_another_queue: The element has next address set.\n", FAILED);
     sleep(1);
     printf("\n\t\tPossibly belongs to another queue. Aborting...\n");
     return 1;
@@ -91,12 +94,14 @@ int elem_in_another_queue(queue_t* elem)
 }
 
 
-void pretty_print_queue_state(queue_t* prev, queue_t* elem, queue_t* next)
+void pretty_print_queue_state(queue_t* prev, queue_t* elem, queue_t* next, char* text)
 {
-  printf("\n\tPrev:%p\tprev:%p\tnext:%p\n", (void*)prev, (void*)prev->prev, (void*)prev->next);
-  printf("\n\tElem:%p\tprev:%p\tnext:%p\n", (void*)elem, (void*)elem->prev, (void*)elem->next);
-  printf("\n\tNext:%p\tprev:%p\tnext:%p\n\n", (void*)next, (void*)next->prev, (void*)next->next);
-
+    #ifdef QUEUE_DEBUG
+    printf("%s", text);
+    printf("\n\tPrev:%p\tprev:%p\tnext:%p\n", (void*)prev, (void*)prev->prev, (void*)prev->next);
+    printf("\n\tElem:%p\tprev:%p\tnext:%p\n", (void*)elem, (void*)elem->prev, (void*)elem->next);
+    printf("\n\tNext:%p\tprev:%p\tnext:%p\n\n", (void*)next, (void*)next->prev, (void*)next->next);
+    #endif
 }
 
 
@@ -112,9 +117,8 @@ queue_t *queue_remove (queue_t **queue, queue_t *elem)
   queue_t* prev = elem->prev;
   queue_t* next = elem->next;
 
-  printf("\n\n\tStructure before remove:\n");
-  printf("\n\tQueue: %p\n", (void*) *queue);
-  pretty_print_queue_state(prev, elem, next);
+
+  pretty_print_queue_state(prev, elem, next, BEFORE);
 
 
   prev->next = elem->next;
@@ -132,8 +136,8 @@ queue_t *queue_remove (queue_t **queue, queue_t *elem)
   elem->prev = NULL;
   elem->next = NULL;
 
-  printf("\n\n\tStructure after remove:\n");
-  pretty_print_queue_state(prev, elem, next);
+  
+  pretty_print_queue_state(prev, elem, next, AFTER);
 
   printf("\n\tSuccessfully removed element.\n\n\n");
   return elem;
@@ -146,21 +150,21 @@ int remove_checks_ok(queue_t* queue, queue_t* elem)
 {
   if (queue == NULL)
   {
-    printf(FAILED"remove_checks_ok: The queue does not exist. Aborting...\n");
+    printf("%10s remove_checks_ok: The queue does not exist. Aborting...\n", FAILED);
     sleep(1);
     return 0;
   }
 
   if (elem == NULL)
   {
-    printf(FAILED"remove_checks_ok: The element does not exist. Aborting...\n");
+    printf("%10s remove_checks_ok: The element does not exist. Aborting...\n", FAILED);
     sleep(1);
     return 0;
   }
 
   if (elem->prev == NULL)
   {
-    printf(FAILED"remove_checks_ok: The element has prev address not set.\n");
+    printf("%10s remove_checks_ok: The element has prev address not set.\n", FAILED);
     sleep(1);
     printf("\n\t\tWill have NULL pointer issues if removed. Aborting...\n");
     return 0;
@@ -168,7 +172,7 @@ int remove_checks_ok(queue_t* queue, queue_t* elem)
 
   if (elem->next == NULL)
   {
-    printf(FAILED"remove_checks_ok: The element has next address not set.\n");
+    printf("%10s remove_checks_ok: The element has next address not set.\n", FAILED);
     sleep(1);
     printf("\n\t\tWill have NULL pointer issues if removed. Aborting...\n");
     return 0;
@@ -211,7 +215,7 @@ int queue_size (queue_t *queue)
 
   if (first->next == NULL)
   {
-    printf(FAILED"queue_size: Bad implementation.\n");
+    printf("%10s queue_size: Bad implementation.\n", FAILED);
     sleep(1);
     printf("\n\t\tNULL pointer found. Queue not circular. Aborting...\n");
   }
@@ -224,14 +228,14 @@ int queue_size (queue_t *queue)
     iterator = iterator->next;
     if (iterator->next == NULL)
     {
-      printf(FAILED"queue_size: Bad implementation.\n");
+      printf("%10s queue_size: Bad implementation.\n", FAILED);
       sleep(1);
       printf("\n\t\tNULL pointer found. Queue not circular. Aborting...\n");
       return 0;
     }
   }
 
-  printf(OK"queue_size: Successfully counted the queue's number of elements.\n");
+  printf("%10s queue_size: Successfully counted the queue's number of elements.\n", OK);
   printf("\n\t\tCounted %d elements.\n\n\n", counter);
 
   return counter;
@@ -244,14 +248,14 @@ void queue_print (char *name, queue_t *queue, void print_elem (void*) )
 {
   if (queue == NULL)
   {
-    printf(FAILED"queue_print: The queue does not exist. Aborting...\n");
+    printf("%10s queue_print: The queue does not exist. Aborting...\n", FAILED);
     sleep(1);
     return;
   }
 
   if (name == NULL)
   {
-    printf(FAILED"queue_print: Name parameter does not exist. Aborting...\n");
+    printf("%10s queue_print: Name parameter does not exist. Aborting...\n", FAILED);
     sleep(1);
     return;
   }
@@ -262,7 +266,7 @@ void queue_print (char *name, queue_t *queue, void print_elem (void*) )
   {
     if (iterator->next == NULL)
     {
-      printf(FAILED"queue_print: Bad implementation.\n");
+      printf("%10s queue_print: Bad implementation.\n", FAILED);
       sleep(1);
       printf("\n\t\tNULL pointer found. Queue not circular. Aborting...\n");
       return;

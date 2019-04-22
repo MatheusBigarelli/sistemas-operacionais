@@ -6,12 +6,14 @@
 extern int task_counter;
 extern task_t* current_task;
 extern queue_t* ready_task_queue;
+extern task_t* main_task;
+extern task_t* dispatcher_task;
 
 
 void dispatcher_body()
 {
     task_t* next;
-    while(task_counter > 0)
+    while(queue_size(ready_task_queue) > 0)
     {
         next = scheduler();
         if (next)
@@ -26,27 +28,32 @@ void dispatcher_body()
     }
 
     printf(OK"dispatcher_body: Exiting dispatcher_body.\n");
-    task_exit(0);
+    task_switch(main_task);
 }
 
 task_t* scheduler()
 {
     // Sleep time for debugging.
     int TIME = 3;
-
     printf("%10s scheduler: Entered.\n", DEBUG);
     DEBUG_SLEEP(TIME);
 
     // Removing and getting first element in queue for FCFS scheduling.
     task_t* next_task_in_queue = (task_t*) queue_remove(&ready_task_queue, ready_task_queue);
-    if (next_task_in_queue)
+    if (next_task_in_queue && next_task_in_queue->status == READY)
     {
+        // Avoids inserting dispatcher in the task queue.
+        // The dispatcher task is always called by task_exit and
+        // therefore needs to be out of the queue
+        // to avoid
+        if (next_task_in_queue == dispatcher_task)
         queue_append(&ready_task_queue, next_task_in_queue);
         printf("%10s scheduler: returning task %d.\n", DEBUG, next_task_in_queue->t_id);
         DEBUG_SLEEP(TIME);
     }
     else
     {
+        printf("%10s scheduler: Next task has status different then READY - task %d.\n", DEBUG, next_task_in_queue->t_id);
         printf("%10s scheduler: Next task found has address NULL.\n", WARNING);
     }
 

@@ -33,12 +33,14 @@ int main (int argc, char *argv[]);
 // Sleep time for time function
 int TIME = 1;
 
-
+// PingPong OS init function
+// Initializes main task and dispatcher task.
+// Task 0 is always main.
+// Task 1 is the Dispatcher.
 void pingpong_init()
 {
     printf("%10s pingpong_init: Beginning.\n", OK);
     setvbuf(stdout, 0, _IONBF, 0);
-
 
     main_task = malloc(sizeof(task_t));
     if (!main_task)
@@ -51,7 +53,7 @@ void pingpong_init()
     current_task = main_task;
 
     int main_id = task_create(main_task, (void*) *main, "   main");
-    // printf("Aqui\n");
+
     if (main_id < 0)
     {
         printf("%10s task_create: failed to create main task.\n", FAILED);
@@ -80,9 +82,9 @@ void pingpong_init()
 int task_create(task_t* task, void (*start_routine) (void*), void* arg)
 {
     int append = 1;
-    if (task == main_task)
+    if (task == main_task || task == dispatcher_task)
     {
-        printf("%10s task_create: Received task main. Will not append to queue.\n", DEBUG);
+        printf("%10s task_create: Received task main or dispatcher. Will not append to queue.\n", DEBUG);
         DEBUG_SLEEP(TIME);
         append = 0;
     }
@@ -104,14 +106,13 @@ int task_create(task_t* task, void (*start_routine) (void*), void* arg)
     if (append)
         queue_append((queue_t**) &ready_task_queue, (queue_t*) task);
 
-    // else
-    //     return
 
     if (ready_task_queue && (task_t*) ready_task_queue->prev == task)
         printf("%10s task_create: successfully appended task %d to task_queue.\n", OK, task->t_id);
     else
     {
-        printf("%10s task_create: failed to append task %d to task_queue.\n", FAILED, task->t_id);
+        if (append)
+            printf("%10s task_create: failed to append task %d to task_queue.\n", FAILED, task->t_id);
         DEBUG_SLEEP(TIME);
     }
 
@@ -123,6 +124,7 @@ int define_internal_task_attributes(task_t* task)
 {
     task->t_id = task_counter;
     task_counter++;
+
 
     getcontext (&(task->t_context));
 
@@ -137,6 +139,7 @@ int define_internal_task_attributes(task_t* task)
     printf("        task_id - %d\n", task->t_id);
 
     task->parent = current_task;
+    task->status = READY;
 
     return 0;
 }
@@ -189,6 +192,8 @@ void task_exit(int exitCode)
     printf("    tasks remaining - %d.\n", task_counter);
     task_counter--;
 
+    current_task->status = FINISHED;
+
     task_switch(dispatcher_task);
 }
 
@@ -212,8 +217,7 @@ void task_yield()
     {
         printf("%10s task_yield: next task received address 0.\n", FAILED);
         DEBUG_SLEEP(TIME);
-        task_switch(main_task);
-        // exit(1);
+        next = dispatcher_task;
     }
 
     task_switch(next);
